@@ -38,11 +38,12 @@ jobs:
           tar -xf magiskboot.tar.xz
           chmod +x magiskboot
 
-          curl -L -o boot_stock.img "https://github.com/paradasimportsoficial-ops/kernel_build_cusco/releases/download/stock/boot.img"
+          curl -L -o boot_stock.zip "https://github.com/paradasimportsoficial-ops/kernel_build_cusco/releases/download/stock/boot.zip"
+          unzip boot_stock.zip
 
-          ./magiskboot unpack boot_stock.img
+          ./magiskboot unpack boot.img
           cp ../android-kernel/out/**/Image.lz4 kernel
-          ./magiskboot repack boot_stock.img ../boot.img
+          ./magiskboot repack boot.img ../boot.img
 
       - name: Anexar Artefato (boot.img Final)
         uses: actions/upload-artifact@v4

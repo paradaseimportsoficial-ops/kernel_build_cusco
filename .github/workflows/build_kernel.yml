@@ -44,8 +44,9 @@ jobs:
           mkdir -p work
           cd work
 
-          curl -L -o magiskboot.tar.xz https://github.com/aosp-realm/magiskboot/releases/download/v26.1/magiskboot-x86_64.tar.xz
-          tar -xf magiskboot.tar.xz
+          curl -L -o magisk.apk https://github.com/topjohnwu/Magisk/releases/download/v26.1/Magisk-v26.1.apk
+          unzip magisk.apk
+          cp lib/x86_64/libmagiskboot.so ./magiskboot
           chmod +x magiskboot
 
           curl -L -o boot_stock.zip "https://github.com/paradasimportsoficial-ops/kernel_build_cusco/releases/download/stock/boot.zip"
@@ -60,3 +61,4 @@ jobs:
         with:
           name: KernelSU_Next_Moto_Edge_50_Fusion
           path: boot.img
+          

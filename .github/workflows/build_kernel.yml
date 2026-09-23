@@ -49,6 +49,7 @@ jobs:
           cp lib/x86_64/libmagiskboot.so ./magiskboot
           chmod +x magiskboot
 
+          # Baixando o boot.zip da release 'stock' usando o link direto do asset
           curl -L -o boot_stock.zip "https://github.com/paradasimportsoficial-ops/kernel_build_cusco/releases/download/stock/boot.zip"
           unzip boot_stock.zip
 

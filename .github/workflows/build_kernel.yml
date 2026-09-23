@@ -48,16 +48,17 @@ jobs:
           mkdir -p work
           cd work
 
-          # Extrair magiskboot do APK oficial
+          # 1. Extrair magiskboot do APK oficial do Magisk
           curl -L -o magisk.apk https://github.com/topjohnwu/Magisk/releases/download/v26.1/Magisk-v26.1.apk
-          unzip magisk.apk
+          unzip -q magisk.apk
           cp lib/x86_64/libmagiskboot.so ./magiskboot
           chmod +x magiskboot
 
-          # Baixar o boot.zip do release usando a CLI oficial do GitHub (autenticada)
-          gh release download --repo paradasimportsoficial-ops/kernel_build_cusco --pattern "boot.zip"
-          unzip boot.zip
+          # 2. Baixar o arquivo boot.zip diretamente do release 'stock' usando o GitHub CLI
+          gh release download stock --repo paradasimportsoficial-ops/kernel_build_cusco --pattern "boot.zip" --clobber
+          unzip -q boot.zip
 
+          # 3. Modificar o boot.img com o novo kernel compilado
           ./magiskboot unpack boot.img
           cp ../android-kernel/out/**/Image.lz4 kernel
           ./magiskboot repack boot.img ../boot.img

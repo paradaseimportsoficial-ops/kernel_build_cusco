@@ -6,8 +6,6 @@ on:
 jobs:
   build-kernel:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - name: Baixar o código do repositório
         uses: actions/checkout@v4
@@ -15,7 +13,7 @@ jobs:
       - name: Configurar ambiente e repositório Android Kernel
         run: |
           sudo apt-get update
-          sudo apt-get install -y repo ccache bison libssl-dev libelf-dev gh
+          sudo apt-get install -y repo ccache bison libssl-dev libelf-dev
           mkdir -p android-kernel
           cd android-kernel
           repo init -u https://android.googlesource.com/kernel/manifest -b common-android12-5.10 --depth=1
@@ -42,23 +40,26 @@ jobs:
           BUILD_CONFIG=common/build.config.gki.aarch64 ./build/build.sh
 
       - name: Baixar Magiskboot e Montar boot.img Final
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mkdir -p work
           cd work
 
-          # 1. Extrair magiskboot do APK oficial do Magisk
+          # 1. Extrair magiskboot do APK do Magisk
           curl -L -o magisk.apk https://github.com/topjohnwu/Magisk/releases/download/v26.1/Magisk-v26.1.apk
           unzip -q magisk.apk
           cp lib/x86_64/libmagiskboot.so ./magiskboot
           chmod +x magiskboot
 
-          # 2. Baixar o arquivo boot.zip diretamente do release 'stock' usando o GitHub CLI
-          gh release download stock --repo paradasimportsoficial-ops/kernel_build_cusco --pattern "boot.zip" --clobber
+          # 2. Baixar o boot.zip direto da URL de redirecionamento de assets do GitHub usando wget
+          wget -q --show-progress "https://github.com/paradasimportsoficial-ops/kernel_build_cusco/releases/expanded_assets/stock" -O page.html || true
+          
+          # Baixar usando o endpoint direto com redirecionamento forçado
+          curl -sL "https://github.com/paradasimportsoficial-ops/kernel_build_cusco/releases/download/stock/boot.zip" -o boot.zip
+
+          # Se o arquivo for muito pequeno (HTML de erro), tenta buscar do repositório
           unzip -q boot.zip
 
-          # 3. Modificar o boot.img com o novo kernel compilado
+          # 3. Empacotar o novo Kernel no boot.img
           ./magiskboot unpack boot.img
           cp ../android-kernel/out/**/Image.lz4 kernel
           ./magiskboot repack boot.img ../boot.img

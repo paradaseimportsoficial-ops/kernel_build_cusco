@@ -22,7 +22,7 @@ jobs:
       - name: Integrar KernelSU Next
         run: |
           cd android-kernel/common
-          curl -LSs "https://raw.githubusercontent.com/rifs2001/KernelSU-Next/next/kernel/setup.sh" | bash -
+          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
 
       - name: Compilar Kernel
         run: |

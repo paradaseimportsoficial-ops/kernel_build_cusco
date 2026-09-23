@@ -7,7 +7,7 @@ jobs:
   build-kernel:
     runs-on: ubuntu-latest
     steps:
-      - name: Baixar o código do repositório (incluindo boot.img)
+      - name: Baixar o código do repositório
         uses: actions/checkout@v4
 
       - name: Configurar ambiente e repositório Android Kernel
@@ -44,23 +44,23 @@ jobs:
           mkdir -p work
           cd work
 
-          # Extrair magiskboot direto do APK oficial
+          # Extrair magiskboot do APK oficial
           curl -L -o magisk.apk https://github.com/topjohnwu/Magisk/releases/download/v26.1/Magisk-v26.1.apk
           unzip magisk.apk
           cp lib/x86_64/libmagiskboot.so ./magiskboot
           chmod +x magiskboot
 
-          # Copiar o boot.img original trazido pelo checkout do repositório
-          cp ../boot.img ./boot.img
+          # Baixar o boot.zip da release 'estoque'
+          curl -L -o boot_stock.zip "https://github.com/paradasimportsoficial-ops/kernel_build_cusco/releases/download/estoque/boot.zip"
+          unzip boot_stock.zip
 
-          # Desempacotar, substituir o kernel compilado e reempacotar
           ./magiskboot unpack boot.img
           cp ../android-kernel/out/**/Image.lz4 kernel
-          ./magiskboot repack boot.img ../boot_ksu.img
+          ./magiskboot repack boot.img ../boot.img
 
       - name: Anexar Artefato (boot.img Final)
         uses: actions/upload-artifact@v4
         with:
           name: KernelSU_Next_Moto_Edge_50_Fusion
-          path: work/boot_ksu.img
+          path: boot.img
           

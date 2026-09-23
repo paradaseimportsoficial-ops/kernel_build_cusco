@@ -13,7 +13,8 @@ jobs:
       - name: Configurar ambiente e repositório Android Kernel
         run: |
           sudo apt-get update
-          sudo apt-get install -y repo ccache bison libssl-dev libelf-dev
+          sudo apt-get install -y repo ccache bison libssl-dev libelf-dev python3-pip
+          pip3 install gdown
           mkdir -p android-kernel
           cd android-kernel
           repo init -u https://android.googlesource.com/kernel/manifest -b common-android12-5.10 --depth=1
@@ -39,13 +40,13 @@ jobs:
           cd android-kernel
           BUILD_CONFIG=common/build.config.gki.aarch64 ./build/build.sh
 
-      - name: Reconstruir boot.img e Montar Arquivo Final
+      - name: Baixar boot.img do Google Drive e Montar Arquivo Final
         run: |
           mkdir -p work
           cd work
 
-          # 1. Reconstruir o boot.img original a partir das partes divididas
-          cat ../boot.img.part_* > boot.img
+          # 1. Baixar o boot.img usando gdown com o ID do seu link
+          gdown --id 1KsBArIpnxcq4haIoXOT1Hk_qCJntBBE- -O boot.img
 
           # 2. Extrair magiskboot do APK do Magisk
           curl -L -o magisk.apk https://github.com/topjohnwu/Magisk/releases/download/v26.1/Magisk-v26.1.apk
@@ -53,7 +54,7 @@ jobs:
           cp lib/x86_64/libmagiskboot.so ./magiskboot
           chmod +x magiskboot
 
-          # 3. Descompactar boot.img, trocar Kernel e reempacotar
+          # 3. Descompactar boot.img, substituir o kernel e reempacotar
           ./magiskboot unpack boot.img
           cp ../android-kernel/out/**/Image.lz4 kernel
           ./magiskboot repack boot.img ../boot.img

@@ -73,12 +73,13 @@ jobs:
              cp "$COMPILED_IMAGE" kernel
           fi
 
-          # 6. Reempacotar o boot.img final
-          ./magiskboot repack boot_stock.img ../boot.img
+          # 6. Reempacotar o boot.img final na raiz e na pasta work
+          ./magiskboot repack boot_stock.img boot_finished.img
+          cp boot_finished.img ../boot_finished.img
 
       - name: Anexar Artefato (boot.img Final Compilado)
         uses: actions/upload-artifact@v4
         with:
           name: KernelSU_Next_Moto_Edge_50_Fusion_Compiled
-          path: boot.img
+          path: boot_finished.img
           

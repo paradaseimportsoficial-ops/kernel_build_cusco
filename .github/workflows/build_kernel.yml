@@ -1,4 +1,4 @@
-name: Build KernelSU Next for Moto Edge 50 Fusion (CUSCO)
+name: Build KernelSU Next para Moto Edge 50 Fusion (CUSCO)
 
 on:
   workflow_dispatch:
@@ -39,11 +39,9 @@ jobs:
           mkdir -p android-kernel
           cd android-kernel
           
-          # Inicializa a árvore GKI com a branch correta do Android 5.10
           repo init -u https://android.googlesource.com/kernel/manifest -b common-android12-5.10 --depth=1
           repo sync -j$(nproc) --no-tags --no-clone-bundle
 
-          # Integração do KernelSU Next v3.4.0
           cd common
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s v3.4.0
 
@@ -57,5 +55,6 @@ jobs:
         with:
           name: KernelSU_Next_Moto_Edge_50_Fusion
           path: |
-            android-kernel/out/android12-5.10/dist/boot.img
+            android-kernel/out/*/dist/boot.img
+            android-kernel/out/dist/boot.img
             

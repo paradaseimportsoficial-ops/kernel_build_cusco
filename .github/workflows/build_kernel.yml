@@ -22,7 +22,7 @@ jobs:
       - name: Integrar KernelSU Next
         run: |
           cd android-kernel/common
-          curl -LSs "https://raw.githubusercontent.com/rifs2001/KernelSU-Next/next/kernel/setup.sh" | bash -s v3.4.0
+          curl -LSs "https://raw.githubusercontent.com/rifs2001/KernelSU-Next/next/kernel/setup.sh" | bash -
 
       - name: Compilar Kernel
         run: |
@@ -34,23 +34,14 @@ jobs:
           mkdir -p work
           cd work
 
-          # Baixar magiskboot para manipulação do boot.img
-          curl -L -o magiskboot https://github.com/topjohnwu/Magisk/releases/download/v26.1/magiskboot-x86_64 || true
-          # Caso queira usar o repositório alternativo do magiskboot estático:
           curl -L -o magiskboot.tar.xz https://github.com/aosp-realm/magiskboot/releases/download/v26.1/magiskboot-x86_64.tar.xz
           tar -xf magiskboot.tar.xz
           chmod +x magiskboot
 
-          # Baixar o boot.img original stock do Moto Edge 50 Fusion (CUSCO)
           curl -L -o boot_stock.img "https://github.com/paradasimportsoficial-ops/kernel_build_cusco/releases/download/stock/boot.img"
 
-          # Descompactar o boot.img stock
           ./magiskboot unpack boot_stock.img
-
-          # Substituir o kernel original pelo nosso Image.lz4 recém-compilado
           cp ../android-kernel/out/**/Image.lz4 kernel
-
-          # Repacotar gerando o novo boot.img
           ./magiskboot repack boot_stock.img ../boot.img
 
       - name: Anexar Artefato (boot.img Final)

@@ -6,6 +6,8 @@ on:
 jobs:
   build-kernel:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Baixar o código do repositório
         uses: actions/checkout@v4
@@ -13,7 +15,7 @@ jobs:
       - name: Configurar ambiente e repositório Android Kernel
         run: |
           sudo apt-get update
-          sudo apt-get install -y repo ccache bison libssl-dev libelf-dev
+          sudo apt-get install -y repo ccache bison libssl-dev libelf-dev gh
           mkdir -p android-kernel
           cd android-kernel
           repo init -u https://android.googlesource.com/kernel/manifest -b common-android12-5.10 --depth=1
@@ -40,6 +42,8 @@ jobs:
           BUILD_CONFIG=common/build.config.gki.aarch64 ./build/build.sh
 
       - name: Baixar Magiskboot e Montar boot.img Final
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mkdir -p work
           cd work
@@ -50,9 +54,9 @@ jobs:
           cp lib/x86_64/libmagiskboot.so ./magiskboot
           chmod +x magiskboot
 
-          # Baixar o boot.zip da release 'estoque'
-          curl -L -o boot_stock.zip "https://github.com/paradasimportsoficial-ops/kernel_build_cusco/releases/download/estoque/boot.zip"
-          unzip boot_stock.zip
+          # Baixar o boot.zip do release usando a CLI oficial do GitHub (autenticada)
+          gh release download --repo paradasimportsoficial-ops/kernel_build_cusco --pattern "boot.zip"
+          unzip boot.zip
 
           ./magiskboot unpack boot.img
           cp ../android-kernel/out/**/Image.lz4 kernel

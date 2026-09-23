@@ -45,7 +45,7 @@ jobs:
           mkdir -p work
           cd work
 
-          # 1. Baixar o boot.img usando a sintaxe atualizada do gdown
+          # 1. Baixar o boot.img
           gdown "https://drive.google.com/uc?id=1KsBArIpnxcq4haIoXOT1Hk_qCJntBBE-" -O boot.img
 
           # 2. Extrair magiskboot do APK do Magisk
@@ -54,14 +54,20 @@ jobs:
           cp lib/x86_64/libmagiskboot.so ./magiskboot
           chmod +x magiskboot
 
-          # 3. Descompactar boot.img, substituir o kernel e reempacotar
+          # 3. Descompactar boot.img
           ./magiskboot unpack boot.img
-          cp ../android-kernel/out/**/Image.lz4 kernel
+
+          # 4. Localizar e copiar a imagem do Kernel compilado (Image, Image.gz ou Image.lz4)
+          KERNEL_PATH=$(find ../android-kernel/out -name "Image*" -type f | head -n 1)
+          echo "Kernel encontrado em: $KERNEL_PATH"
+          cp "$KERNEL_PATH" kernel
+
+          # 5. Reempacotar o boot.img
           ./magiskboot repack boot.img ../boot.img
 
       - name: Anexar Artefato (boot.img Final)
         uses: actions/upload-artifact@v4
         with:
           name: KernelSU_Next_Moto_Edge_50_Fusion
-          path: work/boot.img
+          path: boot.img
           

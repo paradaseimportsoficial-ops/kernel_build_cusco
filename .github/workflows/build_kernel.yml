@@ -1,0 +1,61 @@
+name: Build KernelSU Next for Moto Edge 50 Fusion (CUSCO)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-kernel:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Aumentar espaço em disco
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 8192
+          temp-reserve-mb: 2048
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+
+      - name: Clonar repositório do workflow
+        uses: actions/checkout@v4
+
+      - name: Instalar dependências de compilação
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential bc bison flex libssl-dev libelf-dev \
+            git ccache zip unzip curl python3 libncurses5-dev
+
+      - name: Configurar Repo Tool e Ferramentas Android
+        run: |
+          mkdir -p ~/bin
+          curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+          chmod a+x ~/bin/repo
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Clonar KernelSU Next e integrar no Kernel 5.10 (GKI)
+        run: |
+          mkdir -p android-kernel
+          cd android-kernel
+          
+          # Inicializa a árvore GKI Android 12/13/14 para Kernel 5.10
+          repo init -u https://android.googlesource.com/kernel/manifest -b android12-5.10 --depth=1
+          repo sync -j$(nproc) --no-tags --no-clone-bundle
+
+          # Integração do KernelSU Next v3.4.0
+          cd common
+          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s v3.4.0
+
+      - name: Compilar Boot Image GKI
+        run: |
+          cd android-kernel
+          LTO=thin ./build/build.sh
+
+      - name: Compactar e Enviar o Artefato (boot.img)
+        uses: actions/upload-artifact@v4
+        with:
+          name: KernelSU_Next_Moto_Edge_50_Fusion
+          path: |
+            android-kernel/out/android12-5.10/dist/boot.img
+            

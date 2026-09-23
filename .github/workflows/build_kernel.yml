@@ -1,4 +1,4 @@
-name: Build KernelSU Next para Moto Edge 50 Fusion (CUSCO)
+name: Build KernelSU Next do Zero para Moto Edge 50 Fusion (CUSCO)
 
 on:
   workflow_dispatch:
@@ -13,14 +13,14 @@ jobs:
       - name: Configurar ambiente e repositório Android Kernel
         run: |
           sudo apt-get update
-          sudo apt-get install -y repo ccache bison libssl-dev libelf-dev python3-pip
+          sudo apt-get install -y repo ccache bison libssl-dev libelf-dev python3-pip lz4 pigz
           pip3 install gdown
           mkdir -p android-kernel
           cd android-kernel
           repo init -u https://android.googlesource.com/kernel/manifest -b common-android12-5.10 --depth=1
           repo sync -c -j$(nproc --all) --no-tags --no-clone-bundle
 
-      - name: Integrar KernelSU Next
+      - name: Integrar KernelSU Next no código-fonte
         run: |
           cd android-kernel/common
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
@@ -35,18 +35,18 @@ jobs:
           sudo swapon /swapfile
           free -h
 
-      - name: Compilar Kernel
+      - name: Compilar Kernel do Zero (GKI 5.10)
         run: |
           cd android-kernel
           BUILD_CONFIG=common/build.config.gki.aarch64 ./build/build.sh
 
-      - name: Baixar boot.img do Google Drive e Montar Arquivo Final
+      - name: Processar e Reempacotar com Magiskboot
         run: |
           mkdir -p work
           cd work
 
-          # 1. Baixar o boot.img
-          gdown "https://drive.google.com/uc?id=1KsBArIpnxcq4haIoXOT1Hk_qCJntBBE-" -O boot.img
+          # 1. Baixar o boot.img original do Google Drive
+          gdown "https://drive.google.com/uc?id=1KsBArIpnxcq4haIoXOT1Hk_qCJntBBE-" -O boot_stock.img
 
           # 2. Extrair magiskboot do APK do Magisk
           curl -L -o magisk.apk https://github.com/topjohnwu/Magisk/releases/download/v26.1/Magisk-v26.1.apk
@@ -54,20 +54,31 @@ jobs:
           cp lib/x86_64/libmagiskboot.so ./magiskboot
           chmod +x magiskboot
 
-          # 3. Descompactar boot.img
-          ./magiskboot unpack boot.img
+          # 3. Descompactar o boot.img estoque para inspecionar o formato do kernel
+          ./magiskboot unpack boot_stock.img
 
-          # 4. Localizar e copiar a imagem do Kernel compilado (Image, Image.gz ou Image.lz4)
-          KERNEL_PATH=$(find ../android-kernel/out -name "Image*" -type f | head -n 1)
-          echo "Kernel encontrado em: $KERNEL_PATH"
-          cp "$KERNEL_PATH" kernel
+          # 4. Localizar a imagem criada pela compilação
+          COMPILED_IMAGE=$(find ../android-kernel/out -name "Image" -type f | head -n 1)
+          echo "Kernel compilado encontrado em: $COMPILED_IMAGE"
 
-          # 5. Reempacotar o boot.img
-          ./magiskboot repack boot.img ../boot.img
+          # 5. Identificar o formato do kernel original e comprimir adequadamente
+          KERNEL_FMT=$(file kernel | grep -o -E 'LZ4|gzip|raw' || echo "raw")
+          echo "Formato detectado do kernel original: $KERNEL_FMT"
 
-      - name: Anexar Artefato (boot.img Final)
+          if [[ "$KERNEL_FMT" == *"LZ4"* ]]; then
+             lz4 -c -12 "$COMPILED_IMAGE" > kernel
+          elif [[ "$KERNEL_FMT" == *"gzip"* ]]; then
+             gzip -c -9 "$COMPILED_IMAGE" > kernel
+          else
+             cp "$COMPILED_IMAGE" kernel
+          fi
+
+          # 6. Reempacotar o boot.img final
+          ./magiskboot repack boot_stock.img ../boot.img
+
+      - name: Anexar Artefato (boot.img Final Compilado)
         uses: actions/upload-artifact@v4
         with:
-          name: KernelSU_Next_Moto_Edge_50_Fusion
+          name: KernelSU_Next_Moto_Edge_50_Fusion_Compiled
           path: boot.img
           

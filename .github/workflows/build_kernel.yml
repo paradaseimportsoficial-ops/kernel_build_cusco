@@ -13,7 +13,7 @@ jobs:
       - name: Configurar ambiente e repositório Android Kernel
         run: |
           sudo apt-get update
-          sudo apt-get install -y repo ccache bison flex libssl-dev libelf-dev
+          sudo apt-get install -y repo ccache bison libssl-dev libelf-dev
           mkdir -p android-kernel
           cd android-kernel
           repo init -u https://android.googlesource.com/kernel/manifest -b common-android12-5.10 --depth=1
@@ -26,7 +26,7 @@ jobs:
 
       - name: Configurar Swap para evitar falta de memória
         run: |
-          sudo fallocate -l 8G /swapfile
+          sudo dd if=/dev/zero of=/swapfile bs=1M count=8192
           sudo chmod 600 /swapfile
           sudo mkswap /swapfile
           sudo swapon /swapfile

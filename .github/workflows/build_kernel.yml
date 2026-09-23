@@ -55,6 +55,7 @@ jobs:
         with:
           name: KernelSU_Next_Moto_Edge_50_Fusion
           path: |
-            android-kernel/out/*/dist/boot.img
-            android-kernel/out/dist/boot.img
+            android-kernel/out/**/boot.img
+            android-kernel/out/**/Image.lz4
+            android-kernel/out/**/Image
             

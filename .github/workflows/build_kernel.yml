@@ -45,8 +45,8 @@ jobs:
           mkdir -p work
           cd work
 
-          # 1. Baixar o boot.img usando gdown com o ID do seu link
-          gdown --id 1KsBArIpnxcq4haIoXOT1Hk_qCJntBBE- -O boot.img
+          # 1. Baixar o boot.img usando a sintaxe atualizada do gdown
+          gdown "https://drive.google.com/uc?id=1KsBArIpnxcq4haIoXOT1Hk_qCJntBBE-" -O boot.img
 
           # 2. Extrair magiskboot do APK do Magisk
           curl -L -o magisk.apk https://github.com/topjohnwu/Magisk/releases/download/v26.1/Magisk-v26.1.apk

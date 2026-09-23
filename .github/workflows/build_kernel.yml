@@ -39,8 +39,8 @@ jobs:
           mkdir -p android-kernel
           cd android-kernel
           
-          # Inicializa a árvore GKI Android 12/13/14 para Kernel 5.10
-          repo init -u https://android.googlesource.com/kernel/manifest -b android12-5.10 --depth=1
+          # Inicializa a árvore GKI com a branch correta do Android 5.10
+          repo init -u https://android.googlesource.com/kernel/manifest -b common-android12-5.10 --depth=1
           repo sync -j$(nproc) --no-tags --no-clone-bundle
 
           # Integração do KernelSU Next v3.4.0

@@ -24,11 +24,11 @@ jobs:
           cd android-kernel/common
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
 
-      - name: Configurar Swap para evitar falta de memória
+      - name: Configurar Swap de 12GB para evitar falta de memória
         run: |
           sudo swapoff /swapfile || true
           sudo rm -f /swapfile
-          sudo dd if=/dev/zero of=/swapfile bs=1M count=8192
+          sudo fallocate -l 12G /swapfile
           sudo chmod 600 /swapfile
           sudo mkswap /swapfile
           sudo swapon /swapfile
@@ -60,4 +60,3 @@ jobs:
         with:
           name: KernelSU_Next_Moto_Edge_50_Fusion
           path: boot.img
-          

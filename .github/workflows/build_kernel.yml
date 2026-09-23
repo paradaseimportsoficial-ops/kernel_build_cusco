@@ -24,6 +24,14 @@ jobs:
           cd android-kernel/common
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
 
+      - name: Configurar Swap para evitar falta de memória
+        run: |
+          sudo fallocate -l 8G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          free -h
+
       - name: Compilar Kernel
         run: |
           cd android-kernel

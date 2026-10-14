@@ -1,4 +1,4 @@
-Name: Build KernelSU Next do Zero para Moto Edge 50 Fusion (CUSCO)
+name: Build KernelSU Next do Zero para Moto Edge 50 Fusion (CUSCO)
 
 on:
   workflow_dispatch:

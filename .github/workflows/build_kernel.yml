@@ -1,4 +1,4 @@
-name: Build KernelSU Next do Zero para Moto Edge 50 Fusion (CUSCO)
+Name: Build KernelSU Next do Zero para Moto Edge 50 Fusion (CUSCO)
 
 on:
   workflow_dispatch:
@@ -38,7 +38,11 @@ jobs:
       - name: Compilar Kernel do Zero (GKI 5.10)
         run: |
           cd android-kernel
-          BUILD_CONFIG=common/build.config.gki.aarch64 ./build/build.sh
+          # Remove o sufixo -dirty do Git
+          touch common/.scmversion
+          
+          # Compila com a assinatura personalizada do Técnico Root V1
+          BUILD_CONFIG=common/build.config.gki.aarch64 LOCALVERSION=-tecnico-root-v1 ./build/build.sh
 
       - name: Processar e Reempacotar com Magiskboot
         run: |

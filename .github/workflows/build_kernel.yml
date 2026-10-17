@@ -44,10 +44,8 @@ jobs:
           echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT=y" >> arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=y" >> arch/arm64/configs/gki_defconfig
 
-          # 5. Gerar e salvar defconfig corretamente para passar na validação do GKI
-          make gki_defconfig
-          make savedefconfig
-          cp output/defconfig arch/arm64/configs/gki_defconfig || cp defconfig arch/arm64/configs/gki_defconfig
+          # 5. Injetar KernelSU-Next diretamente
+          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
 
       - name: Configurar Swap de 12GB para evitar falta de memória
         run: |
@@ -63,9 +61,10 @@ jobs:
         run: |
           cd android-kernel
           
-          # Injeta o KernelSU-Next integrado pelo setup oficial logo antes de compilar
+          # Remove resíduos de compilações anteriores que causam o erro de árvore suja
+          rm -rf out
           cd common
-          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
+          git checkout Makefile || true
           cd ..
           
           # Remove o sufixo -dirty do Git

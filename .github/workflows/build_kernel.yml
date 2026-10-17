@@ -24,6 +24,9 @@ jobs:
         run: |
           cd android-kernel/common
           
+          # 0. Limpar completamente o diretório de trabalho para evitar resíduos de builds anteriores
+          make mrproper || true
+          
           # 1. Configurar KernelSU-Next
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
           
@@ -39,7 +42,7 @@ jobs:
           cp -r susfs-patch/kernel_patches/fs/* fs/ 2>/dev/null || true
           cp -r susfs-patch/kernel_patches/include/linux/* include/linux/ 2>/dev/null || true
           
-          # 5. Adicionar as flags do SUSFS e atualizar o defconfig nativamente
+          # 5. Adicionar as flags do SUSFS
           echo "CONFIG_KSU_SUSFS=y" >> arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y" >> arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_SUS_PATH=y" >> arch/arm64/configs/gki_defconfig
@@ -47,7 +50,7 @@ jobs:
           echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT=y" >> arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=y" >> arch/arm64/configs/gki_defconfig
 
-          # Força a geração correta do defconfig para alinhar com o validador
+          # 6. Sincronizar o defconfig oficial
           make gki_defconfig
           make savedefconfig
           cp defconfig arch/arm64/configs/gki_defconfig

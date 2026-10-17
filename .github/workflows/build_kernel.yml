@@ -24,10 +24,9 @@ jobs:
         run: |
           cd android-kernel/common
           
-          # Limpeza profunda preventiva para satisfazer as exigências do build system do GKI
+          # Limpeza total de arquivos órfãos e redefinição do repositório antes do setup
+          git checkout .
           git clean -fdx
-          git reset --hard HEAD
-          make mrproper || true
           
           # 1. Configurar KernelSU-Next
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -

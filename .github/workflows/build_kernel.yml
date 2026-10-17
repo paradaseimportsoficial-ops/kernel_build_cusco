@@ -24,19 +24,15 @@ jobs:
         run: |
           cd android-kernel/common
           
-          # 1. Clonar repositório SUSFS
+          # 1. Clonar repositório SUSFS e aplicar patch
           git clone https://gitlab.com/simonpunk/susfs4ksu.git -b gki-android12-5.10 susfs-patch
-          
-          # 2. Localizar e aplicar o arquivo de patch para o kernel 5.10
           PATCH_FILE=$(find susfs-patch/ -name "*5.10*.patch" | head -n 1)
-          echo "Aplicando patch encontrado em: $PATCH_FILE"
           patch -p1 < "$PATCH_FILE"
-          
-          # 3. Copiar os arquivos do módulo SUSFS para a estrutura do kernel
           cp -r susfs-patch/kernel_patches/fs/* fs/ 2>/dev/null || true
           cp -r susfs-patch/kernel_patches/include/linux/* include/linux/ 2>/dev/null || true
           
-          # 4. Adicionar as flags do SUSFS no defconfig
+          # 2. Adicionar as flags obrigatórias do SUSFS e KernelSU no defconfig
+          echo "CONFIG_KSU=y" >> arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS=y" >> arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y" >> arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_SUS_PATH=y" >> arch/arm64/configs/gki_defconfig
@@ -44,8 +40,14 @@ jobs:
           echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT=y" >> arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=y" >> arch/arm64/configs/gki_defconfig
 
-          # 5. Injetar KernelSU-Next diretamente
+          # 3. Injeção Direta do KernelSU-Next na árvore de drivers do kernel
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
+          
+          # Vincula permanentemente a pasta ao Makefile de drivers para evitar exclusão
+          if [ -d "KernelSU" ] && [ ! -d "drivers/kernelsu" ]; then
+            mv KernelSU drivers/kernelsu
+            echo "obj-\$(CONFIG_KSU) += kernelsu/" >> drivers/Makefile
+          fi
 
       - name: Configurar Swap de 12GB para evitar falta de memória
         run: |
@@ -57,18 +59,18 @@ jobs:
           sudo swapon /swapfile
           free -h
 
-      - name: Compilar Kernel do Zero com suporte a LKM (GKI 5.10)
+      - name: Compilar Kernel do Zero com suporte integrado (GKI 5.10)
         run: |
           cd android-kernel
           
-          # Limpa diretórios gerados e força o reset da árvore para evitar o erro de árvore suja
+          # Limpeza segura preservando estritamente a árvore do KernelSU
           rm -rf out
           cd common
           git checkout .
-          git clean -fdx -e KernelSU
+          git clean -fdx -e drivers/kernelsu
           cd ..
           
-          # Remove o sufixo -dirty do Git
+          # Remove o sufixo -dirty do Git para validação do Makefile
           touch common/.scmversion
           
           BUILD_CONFIG=common/build.config.gki.aarch64 LOCALVERSION=-tecnico-root-susfs ./build/build.sh
@@ -87,7 +89,7 @@ jobs:
           cp lib/x86_64/libmagiskboot.so ./magiskboot
           chmod +x magiskboot
 
-          # 3. Descompactar o boot.img estoque para inspecionar o formato do kernel
+          # 3. Descompactar o boot.img estoque
           ./magiskboot unpack boot_stock.img
 
           # 4. Localizar a imagem criada pela compilação
@@ -106,7 +108,7 @@ jobs:
              cp "$COMPILED_IMAGE" kernel
           fi
 
-          # 6. Reempacotar o boot.img final na raiz e na pasta work
+          # 6. Reempacotar o boot.img final
           ./magiskboot repack boot_stock.img boot_finished.img
           cp boot_finished.img ../boot_finished.img
 

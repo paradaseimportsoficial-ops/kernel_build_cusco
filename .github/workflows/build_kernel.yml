@@ -22,10 +22,10 @@ jobs:
 
       - name: Integrar KernelSU Next e SUSFS no código-fonte
         run: |
+          # Realiza a limpeza de arquivos residuais na raiz do diretório comum antes de aplicar qualquer patch
           cd android-kernel/common
-          
-          # 0. Limpar completamente o diretório de trabalho para evitar resíduos de builds anteriores
-          make mrproper || true
+          git clean -fdx || true
+          git reset --hard HEAD || true
           
           # 1. Configurar KernelSU-Next
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -

@@ -31,7 +31,7 @@ jobs:
           cp -r susfs-patch/kernel_patches/fs/* fs/ 2>/dev/null || true
           cp -r susfs-patch/kernel_patches/include/linux/* include/linux/ 2>/dev/null || true
           
-          # 2. Adicionar as flags obrigatórias no defconfig
+          # 2. Adicionar as flags no defconfig
           echo "CONFIG_KSU=y" >> arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS=y" >> arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y" >> arch/arm64/configs/gki_defconfig
@@ -48,10 +48,14 @@ jobs:
             echo "obj-\$(CONFIG_KSU) += kernelsu/" >> drivers/Makefile
           fi
 
-          # 4. Desativar a trava de assinatura para aceitar o APK Spoofed
-          if [ -f "drivers/kernelsu/apk_sign.c" ]; then
-            sed -i 's/bool ksu_is_manager()/bool ksu_is_manager()\n{\nreturn true;\n}/g' drivers/kernelsu/apk_sign.c || true
-          fi
+          # 4. Patch forçado de ignorar verificação de assinatura do aplicativo Manager
+          TARGET_FILE=$(find drivers/kernelsu -type f \( -name "apk_sign.c" -o -name "allowlist.c" -o -name "manager.c" \))
+          for f in $TARGET_FILE; do
+            if grep -q "ksu_is_manager" "$f"; then
+              echo "Patching ksu_is_manager em $f"
+              perl -i -pe 'BEGIN{$/=undef} s/bool\s+ksu_is_manager\s*\([^\)]*\)\s*\{[^}]*\}/bool ksu_is_manager(void) { return true; }/smg' "$f"
+            fi
+          done
 
       - name: Configurar Swap de 12GB para evitar falta de memória
         run: |

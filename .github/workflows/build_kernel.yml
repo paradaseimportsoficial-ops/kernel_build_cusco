@@ -44,6 +44,11 @@ jobs:
           echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT=y" >> arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=y" >> arch/arm64/configs/gki_defconfig
 
+          # 5. Sincronização oficial para satisfazer o validador savedefconfig do GKI
+          make gki_defconfig
+          make savedefconfig
+          cp defconfig arch/arm64/configs/gki_defconfig
+
       - name: Configurar Swap de 12GB para evitar falta de memória
         run: |
           sudo swapoff /swapfile || true
@@ -58,7 +63,7 @@ jobs:
         run: |
           cd android-kernel
           
-          # Injeta o KernelSU-Next de forma integrada pelo setup oficial do KernelSU logo antes de compilar
+          # Injeta o KernelSU-Next integrado pelo setup oficial logo antes de compilar
           cd common
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
           cd ..

@@ -31,7 +31,7 @@ jobs:
           cp -r susfs-patch/kernel_patches/fs/* fs/ 2>/dev/null || true
           cp -r susfs-patch/kernel_patches/include/linux/* include/linux/ 2>/dev/null || true
           
-          # 2. Adicionar as flags obrigatórias do SUSFS e KernelSU no defconfig
+          # 2. Adicionar as flags obrigatórias no defconfig
           echo "CONFIG_KSU=y" >> arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS=y" >> arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y" >> arch/arm64/configs/gki_defconfig
@@ -40,13 +40,17 @@ jobs:
           echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT=y" >> arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=y" >> arch/arm64/configs/gki_defconfig
 
-          # 3. Injeção Direta do KernelSU-Next na árvore de drivers do kernel
+          # 3. Injeção Direta do KernelSU-Next na árvore de drivers
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
           
-          # Vincula permanentemente a pasta ao Makefile de drivers para evitar exclusão
           if [ -d "KernelSU" ] && [ ! -d "drivers/kernelsu" ]; then
             mv KernelSU drivers/kernelsu
             echo "obj-\$(CONFIG_KSU) += kernelsu/" >> drivers/Makefile
+          fi
+
+          # 4. Desativar a trava de assinatura para aceitar o APK Spoofed
+          if [ -f "drivers/kernelsu/apk_sign.c" ]; then
+            sed -i 's/bool ksu_is_manager()/bool ksu_is_manager()\n{\nreturn true;\n}/g' drivers/kernelsu/apk_sign.c || true
           fi
 
       - name: Configurar Swap de 12GB para evitar falta de memória
@@ -63,14 +67,14 @@ jobs:
         run: |
           cd android-kernel
           
-          # Limpeza segura preservando estritamente a árvore do KernelSU
+          # Limpeza segura preservando a árvore do KernelSU
           rm -rf out
           cd common
           git checkout .
           git clean -fdx -e drivers/kernelsu
           cd ..
           
-          # Remove o sufixo -dirty do Git para validação do Makefile
+          # Remove o sufixo -dirty do Git
           touch common/.scmversion
           
           BUILD_CONFIG=common/build.config.gki.aarch64 LOCALVERSION=-tecnico-root-susfs ./build/build.sh
@@ -96,7 +100,7 @@ jobs:
           COMPILED_IMAGE=$(find ../android-kernel/out -name "Image" -type f | head -n 1)
           echo "Kernel compilado encontrado em: $COMPILED_IMAGE"
 
-          # 5. Identificar o formato do kernel original e comprimir adequadamente
+          # 5. Identificar o formato do kernel original e comprimir
           KERNEL_FMT=$(file kernel | grep -o -E 'LZ4|gzip|raw' || echo "raw")
           echo "Formato detectado do kernel original: $KERNEL_FMT"
 

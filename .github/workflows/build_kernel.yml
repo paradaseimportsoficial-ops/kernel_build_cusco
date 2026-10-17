@@ -27,16 +27,19 @@ jobs:
           # 1. Configurar KernelSU-Next
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
           
-          # 2. Clonar e aplicar os patches do SUSFS para o Kernel 5.10
+          # 2. Clonar repositório SUSFS
           git clone https://gitlab.com/simonpunk/susfs4ksu.git -b gki-android12-5.10 susfs-patch
-          cp susfs-patch/kernel_patches/5.10/50_add_susfs_in_gki-android12-5.10.patch ./
-          patch -p1 < 50_add_susfs_in_gki-android12-5.10.patch
           
-          # 3. Copiar os arquivos do módulo SUSFS para a pasta correta
-          cp -r susfs-patch/kernel_patches/fs/* fs/
-          cp -r susfs-patch/kernel_patches/include/linux/* include/linux/
+          # 3. Localizar e aplicar o arquivo de patch para o kernel 5.10
+          PATCH_FILE=$(find susfs-patch/ -name "*5.10*.patch" | head -n 1)
+          echo "Aplicando patch encontrado em: $PATCH_FILE"
+          patch -p1 < "$PATCH_FILE"
           
-          # 4. Ativar as flags do SUSFS no arquivo de configuração do Kernel (defconfig)
+          # 4. Copiar os arquivos do módulo SUSFS para a estrutura do kernel
+          cp -r susfs-patch/kernel_patches/fs/* fs/ 2>/dev/null || true
+          cp -r susfs-patch/kernel_patches/include/linux/* include/linux/ 2>/dev/null || true
+          
+          # 5. Ativar as configurações do SUSFS no defconfig
           echo "CONFIG_KSU_SUSFS=y" >> arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y" >> arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_SUS_PATH=y" >> arch/arm64/configs/gki_defconfig

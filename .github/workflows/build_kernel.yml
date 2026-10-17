@@ -47,6 +47,11 @@ jobs:
           # 5. Injetar KernelSU-Next diretamente
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
 
+          # 6. Sincronizar o savedefconfig para que o arquivo oficial reflita perfeitamente as adições
+          make gki_defconfig
+          make savedefconfig
+          cp defconfig arch/arm64/configs/gki_defconfig
+
       - name: Configurar Swap de 12GB para evitar falta de memória
         run: |
           sudo swapoff /swapfile || true
@@ -61,8 +66,14 @@ jobs:
         run: |
           cd android-kernel
           
-          # Desativa permanentemente a função de checagem de defconfig dentro do script de build do Google
-          sed -i 's/eval check_defconfig/#eval check_defconfig/g' build/build.sh || true
+          # Remove resíduos e limpa o Makefile
+          rm -rf out
+          cd common
+          git checkout Makefile || true
+          cd ..
+          
+          # Garante que a árvore aponte o defconfig atualizado como oficial para zerar o diff
+          cp common/defconfig common/arch/arm64/configs/gki_defconfig || true
           
           # Remove o sufixo -dirty do Git
           touch common/.scmversion

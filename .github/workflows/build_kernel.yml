@@ -24,37 +24,25 @@ jobs:
         run: |
           cd android-kernel/common
           
-          # Limpeza total de arquivos órfãos e redefinição do repositório antes do setup
-          git checkout .
-          git clean -fdx
-          
-          # 1. Configurar KernelSU-Next
-          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
-          
-          # 2. Clonar repositório SUSFS
+          # 1. Clonar repositório SUSFS
           git clone https://gitlab.com/simonpunk/susfs4ksu.git -b gki-android12-5.10 susfs-patch
           
-          # 3. Localizar e aplicar o arquivo de patch para o kernel 5.10
+          # 2. Localizar e aplicar o arquivo de patch para o kernel 5.10
           PATCH_FILE=$(find susfs-patch/ -name "*5.10*.patch" | head -n 1)
           echo "Aplicando patch encontrado em: $PATCH_FILE"
           patch -p1 < "$PATCH_FILE"
           
-          # 4. Copiar os arquivos do módulo SUSFS para a estrutura do kernel
+          # 3. Copiar os arquivos do módulo SUSFS para a estrutura do kernel
           cp -r susfs-patch/kernel_patches/fs/* fs/ 2>/dev/null || true
           cp -r susfs-patch/kernel_patches/include/linux/* include/linux/ 2>/dev/null || true
           
-          # 5. Adicionar as flags do SUSFS
+          # 4. Adicionar as flags do SUSFS no defconfig
           echo "CONFIG_KSU_SUSFS=y" >> arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y" >> arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_SUS_PATH=y" >> arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_SUS_MOUNT=y" >> arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT=y" >> arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=y" >> arch/arm64/configs/gki_defconfig
-
-          # 6. Sincronizar o defconfig oficial
-          make gki_defconfig
-          make savedefconfig
-          cp defconfig arch/arm64/configs/gki_defconfig
 
       - name: Configurar Swap de 12GB para evitar falta de memória
         run: |
@@ -69,6 +57,12 @@ jobs:
       - name: Compilar Kernel do Zero com suporte a LKM (GKI 5.10)
         run: |
           cd android-kernel
+          
+          # Injeta o KernelSU-Next de forma integrada pelo setup oficial do KernelSU logo antes de compilar
+          cd common
+          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
+          cd ..
+          
           # Remove o sufixo -dirty do Git
           touch common/.scmversion
           

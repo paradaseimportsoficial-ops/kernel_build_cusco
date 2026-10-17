@@ -22,10 +22,10 @@ jobs:
 
       - name: Integrar KernelSU Next e SUSFS no código-fonte
         run: |
-          # Realiza a limpeza de arquivos residuais na raiz do diretório comum antes de aplicar qualquer patch
           cd android-kernel/common
-          git clean -fdx || true
-          git reset --hard HEAD || true
+          
+          # Limpeza profunda da árvore do kernel antes de qualquer alteração
+          make mrproper || true
           
           # 1. Configurar KernelSU-Next
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
@@ -92,7 +92,7 @@ jobs:
 
           # 4. Localizar a imagem criada pela compilação
           COMPILED_IMAGE=$(find ../android-kernel/out -name "Image" -type f | head -n 1)
-          echo "Kernel compilado encontrado em: $COMPILED_IMAGE"
+          echo "Kernel compilado encontrado em: $COMPIGrade_IMAGE"
 
           # 5. Identificar o formato do kernel original e comprimir adequadamente
           KERNEL_FMT=$(file kernel | grep -o -E 'LZ4|gzip|raw' || echo "raw")

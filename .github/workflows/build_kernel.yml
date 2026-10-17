@@ -39,13 +39,17 @@ jobs:
           cp -r susfs-patch/kernel_patches/fs/* fs/ 2>/dev/null || true
           cp -r susfs-patch/kernel_patches/include/linux/* include/linux/ 2>/dev/null || true
           
-          # 5. Ativar as configurações do SUSFS no defconfig
+          # 5. Adicionar as flags do SUSFS diretamente no final do gki_defconfig e atualizar o defconfig oficial
           echo "CONFIG_KSU_SUSFS=y" >> arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y" >> arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_SUS_PATH=y" >> arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_SUS_MOUNT=y" >> arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT=y" >> arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=y" >> arch/arm64/configs/gki_defconfig
+
+          # Atualiza o arquivo de salvamento para que o check_defconfig considere o novo estado como correto
+          make savedefconfig
+          cp defconfig arch/arm64/configs/gki_defconfig
 
       - name: Configurar Swap de 12GB para evitar falta de memória
         run: |
@@ -62,10 +66,6 @@ jobs:
           cd android-kernel
           # Remove o sufixo -dirty do Git
           touch common/.scmversion
-          
-          # Desativa a verificação de defconfig exportando a variável no ambiente
-          export SKIP_DEFCONFIG_CHECK=1
-          export POST_DEFCONFIG_CMDS=""
           
           BUILD_CONFIG=common/build.config.gki.aarch64 LOCALVERSION=-tecnico-root-susfs ./build/build.sh
 

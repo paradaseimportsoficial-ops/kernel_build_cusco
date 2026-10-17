@@ -63,8 +63,8 @@ jobs:
           # Remove o sufixo -dirty do Git
           touch common/.scmversion
           
-          # Compila com a assinatura personalizada e habilita módulos LKM externos
-          BUILD_CONFIG=common/build.config.gki.aarch64 LOCALVERSION=-tecnico-root-susfs ./build/build.sh
+          # Desativa a verificação de defconfig (SKIP_DEFCONFIG_CHECK=1) para aceitar as alterações do SUSFS
+          SKIP_DEFCONFIG_CHECK=1 BUILD_CONFIG=common/build.config.gki.aarch64 LOCALVERSION=-tecnico-root-susfs ./build/build.sh
 
       - name: Processar e Reempacotar com Magiskboot
         run: |

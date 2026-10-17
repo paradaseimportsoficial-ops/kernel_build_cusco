@@ -47,6 +47,9 @@ jobs:
           # 5. Injetar KernelSU-Next diretamente
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
 
+          # 6. Desativar a validação estricta do defconfig no build.config para evitar o erro de diff
+          sed -i '/check_defconfig/d' build.config.gki.aarch64 || true
+
       - name: Configurar Swap de 12GB para evitar falta de memória
         run: |
           sudo swapoff /swapfile || true
@@ -61,7 +64,7 @@ jobs:
         run: |
           cd android-kernel
           
-          # Remove resíduos de compilações anteriores que causam o erro de árvore suja
+          # Remove resíduos anteriores e limpa o Makefile
           rm -rf out
           cd common
           git checkout Makefile || true

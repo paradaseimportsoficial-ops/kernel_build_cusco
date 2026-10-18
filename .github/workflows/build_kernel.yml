@@ -1,4 +1,4 @@
-name: Build KernelSU Next com SUSFS LKM para Moto Edge 50 Fusion (CUSCO)
+name: Build KernelSU Next do Zero para Moto Edge 50 Fusion (CUSCO)
 
 on:
   workflow_dispatch:
@@ -7,57 +7,25 @@ jobs:
   build-kernel:
     runs-on: ubuntu-latest
     steps:
-      - name: Baixar o código do repositório
+      - name: Baixar o c贸digo do reposit贸rio
         uses: actions/checkout@v4
 
-      - name: Configurar ambiente e repositório Android Kernel
+      - name: Configurar ambiente e reposit贸rio Android Kernel
         run: |
           sudo apt-get update
-          sudo apt-get install -y repo ccache bison libssl-dev libelf-dev python3-pip lz4 pigz git curl
+          sudo apt-get install -y repo ccache bison libssl-dev libelf-dev python3-pip lz4 pigz
           pip3 install gdown
           mkdir -p android-kernel
           cd android-kernel
           repo init -u https://android.googlesource.com/kernel/manifest -b common-android12-5.10 --depth=1
           repo sync -c -j$(nproc --all) --no-tags --no-clone-bundle
 
-      - name: Integrar KernelSU Next e SUSFS no código-fonte
+      - name: Integrar KernelSU Next no c贸digo-fonte
         run: |
           cd android-kernel/common
-          
-          # 1. Clonar repositório SUSFS e aplicar patch
-          git clone https://gitlab.com/simonpunk/susfs4ksu.git -b gki-android12-5.10 susfs-patch
-          PATCH_FILE=$(find susfs-patch/ -name "*5.10*.patch" | head -n 1)
-          patch -p1 < "$PATCH_FILE"
-          cp -r susfs-patch/kernel_patches/fs/* fs/ 2>/dev/null || true
-          cp -r susfs-patch/kernel_patches/include/linux/* include/linux/ 2>/dev/null || true
-          
-          # 2. Adicionar as flags no defconfig
-          echo "CONFIG_KSU=y" >> arch/arm64/configs/gki_defconfig
-          echo "CONFIG_KSU_SUSFS=y" >> arch/arm64/configs/gki_defconfig
-          echo "CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y" >> arch/arm64/configs/gki_defconfig
-          echo "CONFIG_KSU_SUSFS_SUS_PATH=y" >> arch/arm64/configs/gki_defconfig
-          echo "CONFIG_KSU_SUSFS_SUS_MOUNT=y" >> arch/arm64/configs/gki_defconfig
-          echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT=y" >> arch/arm64/configs/gki_defconfig
-          echo "CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=y" >> arch/arm64/configs/gki_defconfig
-
-          # 3. Injeção Direta do KernelSU-Next na árvore de drivers
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
-          
-          if [ -d "KernelSU" ] && [ ! -d "drivers/kernelsu" ]; then
-            mv KernelSU drivers/kernelsu
-            echo "obj-\$(CONFIG_KSU) += kernelsu/" >> drivers/Makefile
-          fi
 
-          # 4. Patch forçado de ignorar verificação de assinatura do aplicativo Manager
-          TARGET_FILE=$(find drivers/kernelsu -type f \( -name "apk_sign.c" -o -name "allowlist.c" -o -name "manager.c" \))
-          for f in $TARGET_FILE; do
-            if grep -q "ksu_is_manager" "$f"; then
-              echo "Patching ksu_is_manager em $f"
-              perl -i -pe 'BEGIN{$/=undef} s/bool\s+ksu_is_manager\s*\([^\)]*\)\s*\{[^}]*\}/bool ksu_is_manager(void) { return true; }/smg' "$f"
-            fi
-          done
-
-      - name: Configurar Swap de 12GB para evitar falta de memória
+      - name: Configurar Swap de 12GB para evitar falta de mem贸ria
         run: |
           sudo swapoff /swapfile || true
           sudo rm -f /swapfile
@@ -67,21 +35,14 @@ jobs:
           sudo swapon /swapfile
           free -h
 
-      - name: Compilar Kernel do Zero com suporte integrado (GKI 5.10)
+      - name: Compilar Kernel do Zero (GKI 5.10)
         run: |
           cd android-kernel
-          
-          # Limpeza segura preservando a árvore do KernelSU
-          rm -rf out
-          cd common
-          git checkout .
-          git clean -fdx -e drivers/kernelsu
-          cd ..
-          
           # Remove o sufixo -dirty do Git
           touch common/.scmversion
           
-          BUILD_CONFIG=common/build.config.gki.aarch64 LOCALVERSION=-tecnico-root-susfs ./build/build.sh
+          # Compila com a assinatura personalizada do T茅cnico Root V1
+          BUILD_CONFIG=common/build.config.gki.aarch64 LOCALVERSION=-tecnico-root-v1 ./build/build.sh
 
       - name: Processar e Reempacotar com Magiskboot
         run: |
@@ -97,14 +58,14 @@ jobs:
           cp lib/x86_64/libmagiskboot.so ./magiskboot
           chmod +x magiskboot
 
-          # 3. Descompactar o boot.img estoque
+          # 3. Descompactar o boot.img estoque para inspecionar o formato do kernel
           ./magiskboot unpack boot_stock.img
 
-          # 4. Localizar a imagem criada pela compilação
+          # 4. Localizar a imagem criada pela compila莽茫o
           COMPILED_IMAGE=$(find ../android-kernel/out -name "Image" -type f | head -n 1)
           echo "Kernel compilado encontrado em: $COMPILED_IMAGE"
 
-          # 5. Identificar o formato do kernel original e comprimir
+          # 5. Identificar o formato do kernel original e comprimir adequadamente
           KERNEL_FMT=$(file kernel | grep -o -E 'LZ4|gzip|raw' || echo "raw")
           echo "Formato detectado do kernel original: $KERNEL_FMT"
 
@@ -116,13 +77,14 @@ jobs:
              cp "$COMPILED_IMAGE" kernel
           fi
 
-          # 6. Reempacotar o boot.img final
+          # 6. Reempacotar o boot.img final na raiz e na pasta work
           ./magiskboot repack boot_stock.img boot_finished.img
           cp boot_finished.img ../boot_finished.img
 
-      - name: Anexar Artefato (boot.img Final com SUSFS)
+      - name: Anexar Artefato (boot.img Final Compilado)
         uses: actions/upload-artifact@v4
         with:
-          name: KernelSU_Next_SUSFS_Moto_Edge_50_Fusion
+          name: KernelSU_Next_Moto_Edge_50_Fusion_Compiled
           path: boot_finished.img
+
           

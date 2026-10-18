@@ -7,10 +7,10 @@ jobs:
   build-kernel:
     runs-on: ubuntu-latest
     steps:
-      - name: Baixar o c贸digo do reposit贸rio
+      - name: Baixar o código do repositório
         uses: actions/checkout@v4
 
-      - name: Configurar ambiente e reposit贸rio Android Kernel
+      - name: Configurar ambiente e repositório Android Kernel
         run: |
           sudo apt-get update
           sudo apt-get install -y repo ccache bison libssl-dev libelf-dev python3-pip lz4 pigz
@@ -20,12 +20,12 @@ jobs:
           repo init -u https://android.googlesource.com/kernel/manifest -b common-android12-5.10 --depth=1
           repo sync -c -j$(nproc --all) --no-tags --no-clone-bundle
 
-      - name: Integrar KernelSU Next no c贸digo-fonte
+      - name: Integrar KernelSU Next no código-fonte
         run: |
           cd android-kernel/common
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
 
-      - name: Configurar Swap de 12GB para evitar falta de mem贸ria
+      - name: Configurar Swap de 12GB para evitar falta de memória
         run: |
           sudo swapoff /swapfile || true
           sudo rm -f /swapfile
@@ -41,7 +41,7 @@ jobs:
           # Remove o sufixo -dirty do Git
           touch common/.scmversion
           
-          # Compila com a assinatura personalizada do T茅cnico Root V1
+          # Compila com a assinatura personalizada do Técnico Root V1
           BUILD_CONFIG=common/build.config.gki.aarch64 LOCALVERSION=-tecnico-root-v1 ./build/build.sh
 
       - name: Processar e Reempacotar com Magiskboot
@@ -61,7 +61,7 @@ jobs:
           # 3. Descompactar o boot.img estoque para inspecionar o formato do kernel
           ./magiskboot unpack boot_stock.img
 
-          # 4. Localizar a imagem criada pela compila莽茫o
+          # 4. Localizar a imagem criada pela compilação
           COMPILED_IMAGE=$(find ../android-kernel/out -name "Image" -type f | head -n 1)
           echo "Kernel compilado encontrado em: $COMPILED_IMAGE"
 
@@ -86,5 +86,3 @@ jobs:
         with:
           name: KernelSU_Next_Moto_Edge_50_Fusion_Compiled
           path: boot_finished.img
-
-          
